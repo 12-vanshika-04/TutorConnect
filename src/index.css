@@ -9,3 +9,13 @@
 }
 .leaflet-container { height: 400px; width: 100%; }
 .input { @apply w-full border p-2 rounded; }
+/* in index.css or tailwind.css */
+@keyframes spin {
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  .animate-spin {
+    animation: spin 0.8s linear infinite;
+  }
+  

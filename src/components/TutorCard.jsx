@@ -118,7 +118,7 @@ export default function TutorCard({ tutor }) {
           to={`/book/${$id}`}
           className="bg-purple-500 text-white text-center text-md font-medium px-5 py-2 rounded-lg hover:bg-purple-600 transition w-full"
         >
-          Book
+          Book Appointment
         </Link>
       </div>
     </div>

@@ -1,60 +1,51 @@
+// src/components/Navbar.jsx
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { logout } from "../features/auth/authSlice";
-import { databases } from "../utils/appwrite";
-import { Query } from "appwrite";
+import { logout, updateRole } from "../features/auth/authSlice";
 
 export default function Navbar() {
-  const { user } = useSelector((state) => state.auth);
+  const { user, role } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const [role, setRole] = useState(null);
+  const [currentRole, setCurrentRole] = useState(role || "");
 
   useEffect(() => {
-    const fetchUserRole = async () => {
-      try {
-        if (!user?.$id) return;
+    setCurrentRole(role);
+  }, [role]);
 
-        const res = await databases.listDocuments(
-          import.meta.env.VITE_APPWRITE_DATABASE_ID,
-          import.meta.env.VITE_APPWRITE_USERS_TABLE_ID,
-          [Query.equal("userId", user.$id)]
-        );
+  /* ------------------ Role Change ------------------ */
+  const handleRoleChange = async (newRole) => {
+    setCurrentRole(newRole);
+    if (!user) return;
 
-        if (res.documents.length > 0) {
-          setRole(res.documents[0].role);
-        }
-      } catch (err) {
-        console.error("Error fetching user role:", err);
-      }
-    };
+    try {
+      // Update role in Appwrite DB via Redux thunk
+      await dispatch(updateRole({ userId: user.$id, role: newRole })).unwrap();
+    } catch (err) {
+      console.error("Error updating role:", err);
+    }
+  };
 
-    fetchUserRole();
-  }, [user]);
-
+  /* ------------------ Logout ------------------ */
   const handleLogout = async () => {
     await dispatch(logout());
-    setRole(null); // 👈 Clear role on logout
     navigate("/");
   };
-  
 
   return (
     <nav className="bg-white shadow-md flex justify-between items-center px-8 py-4">
+      {/* Left side */}
       <div className="flex items-center gap-5">
-      {/* Logo */}
-      <h1
-        className="text-2xl font-bold text-purple-600 cursor-pointer"
-        onClick={() => navigate("/")}
-      >
-        TutorConnect
-      </h1>
+        <h1
+          className="text-2xl font-bold text-purple-600 cursor-pointer"
+          onClick={() => navigate("/")}
+        >
+          TutorConnect
+        </h1>
 
-      {/* Left-side Action Buttons */}
-      
-        {/* Tutor: show Register as Tutor */}
-        {role === "tutor" && (
+        {/* Role-based action */}
+        {currentRole === "tutor" && (
           <Link
             to="/register-tutor"
             className="bg-purple-600 hover:bg-purple-400 text-white font-bold px-4 py-2 rounded-lg transition"
@@ -62,9 +53,7 @@ export default function Navbar() {
             Register as Tutor
           </Link>
         )}
-
-        {/* Student & Admin: show Find Tutors */}
-        {(role === "student" || role === "admin") && (
+        {(currentRole === "student" || currentRole === "admin") && (
           <Link
             to="/find-tutors"
             className="bg-purple-600 hover:bg-purple-400 text-white font-semibold px-4 py-2 rounded-lg transition"
@@ -74,7 +63,7 @@ export default function Navbar() {
         )}
       </div>
 
-      {/* Right-side Navigation */}
+      {/* Right side */}
       <div className="flex items-center space-x-5">
         <Link to="/" className="hover:text-purple-600 font-medium">
           Home
@@ -83,8 +72,20 @@ export default function Navbar() {
           About
         </Link>
 
-        {/* ---- Role-based Dashboards ---- */}
-        {role === "student" && (
+        {/* Role Dropdown */}
+        {user && (
+          <select
+            value={currentRole}
+            onChange={(e) => handleRoleChange(e.target.value)}
+            className="border px-2 py-1 rounded text-gray-800"
+          >
+            <option value="student">Student</option>
+            <option value="tutor">Tutor</option>
+          </select>
+        )}
+
+        {/* Dashboard Links */}
+        {currentRole === "student" && user && (
           <Link
             to="/student-dashboard"
             className="bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600"
@@ -92,8 +93,7 @@ export default function Navbar() {
             Student Dashboard
           </Link>
         )}
-
-        {role === "tutor" && (
+        {currentRole === "tutor" && user && (
           <Link
             to="/tutor-dashboard"
             className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600"
@@ -101,40 +101,13 @@ export default function Navbar() {
             Tutor Dashboard
           </Link>
         )}
-
-        {role === "admin" && (
-          <>
-            <Link
-              to="/tutor-dashboard"
-              className="bg-blue-100 text-blue-800 px-3 py-2 rounded hover:bg-blue-200"
-            >
-              Tutor Dashboard
-            </Link>
-            <Link
-              to="/student-dashboard"
-              className="bg-green-100 text-green-800 px-3 py-2 rounded hover:bg-green-200"
-            >
-              Student Dashboard
-            </Link>
-            <Link
-              to="/register-tutor"
-              className="bg-purple-100 text-purple-700 px-3 py-2 rounded hover:bg-purple-200"
-            >
-              Register as Tutor
-            </Link>
-            <Link
-              to="/find-tutors"
-              className="bg-green-100 text-green-700 px-3 py-2 rounded hover:bg-green-200"
-            >
-              Find Tutors
-            </Link>
-            <Link
-              to="/admin-verify"
-              className="bg-yellow-500 text-white px-3 py-2 rounded hover:bg-yellow-600"
-            >
-              Admin Panel
-            </Link>
-          </>
+        {currentRole === "admin" && user && (
+          <Link
+            to="/admin-verify"
+            className="bg-yellow-500 text-white px-3 py-2 rounded hover:bg-yellow-600"
+          >
+            Admin Panel
+          </Link>
         )}
 
         {/* Auth buttons */}

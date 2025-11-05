@@ -4,13 +4,13 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/footer";
 import { Outlet } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { getCurrentUser } from "./features/auth/authSlice";
+import { checkGoogleUser } from "./features/auth/authSlice";
 
 function Layout() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    dispatch(getCurrentUser());
+    dispatch(checkGoogleUser());
   }, [dispatch]);
 
   return (

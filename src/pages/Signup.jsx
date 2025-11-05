@@ -1,146 +1,244 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { account, databases, ID } from "../utils/appwrite";
-import { useDispatch } from "react-redux";
-import { loginUser } from "../features/auth/authSlice"; // still optional if you need auto-login
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react"; // 👁 toggle icons
+import { Eye, EyeOff } from "lucide-react";
+import { Query } from "appwrite";
+
+const DB = import.meta.env.VITE_APPWRITE_DATABASE_ID;
+const USERS_COLLECTION = import.meta.env.VITE_APPWRITE_USERS_TABLE_ID;
+const TUTORS_TABLE = import.meta.env.VITE_APPWRITE_TUTORS_TABLE_ID;
 
 export default function Signup() {
   const { register, handleSubmit, reset } = useForm();
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [googleUser, setGoogleUser] = useState(null);
+  const [showRoleSelection, setShowRoleSelection] = useState(false);
+  const [selectedRole, setSelectedRole] = useState("");
+
+  // ------------------ Handle Google OAuth after redirect ------------------
+  useEffect(() => {
+    const handleGoogleUser = async () => {
+      try {
+        const user = await account.get();
+        if (!user) return;
+
+        // Check if user exists in collection
+        const res = await databases.listDocuments(DB, USERS_COLLECTION, [
+          Query.equal("userId", user.$id),
+        ]);
+
+        if (res.documents.length === 0) {
+          setGoogleUser(user);
+          setShowRoleSelection(true); // New Google user → select role
+        } else {
+          const role = res.documents[0].role;
+          if (!role) navigate("/select-role");
+          else if (role === "student") navigate("/student-dashboard");
+          else navigate("/tutor-dashboard");
+        }
+      } catch (err) {
+        console.log("No active Google session yet", err);
+      }
+    };
+    handleGoogleUser();
+  }, [navigate]);
+
+  // ------------------------ Standard Email/Password Signup ------------------------
   const onSubmit = async (data) => {
-    const { name, email, password, role } = data;
-
-    // ✅ Password validation
-    if (password.length < 8 || password.length > 256) {
-      setErrorMessage("Password must be between 8 and 256 characters long.");
+    const { name, email, password } = data;
+    if (password.length < 8) {
+      setErrorMessage("Password must be at least 8 characters.");
       return;
     }
 
-    setErrorMessage(""); // clear previous errors
+    setErrorMessage("");
+    setIsSubmitting(true);
 
     try {
-      console.log("Signup started:", data);
-
-      // ✅ Step 1: Create account in Appwrite Auth
+      // Create user account
       const newUser = await account.create(ID.unique(), email, password, name);
-      console.log("User created:", newUser);
-
-      // ✅ Step 2: Auto-login (create session)
       await account.createEmailPasswordSession(email, password);
-      console.log("Session created");
 
-      // ✅ Step 3: Add document in 'users' collection
+      // Add user to users collection
       await databases.createDocument(
-        import.meta.env.VITE_APPWRITE_DATABASE_ID,
-        import.meta.env.VITE_APPWRITE_USERS_TABLE_ID,
+        DB,
+        USERS_COLLECTION,
         ID.unique(),
         {
           name,
           email,
-          role,
           userId: newUser.$id,
-        }
+          role: null, // will select role later
+        },
+        ["*"], // read permissions
+        ["*"]  // write permissions
       );
 
-      console.log("User document added to DB");
-
-      // ✅ Step 4: Redirect user to correct dashboard
-      if (role === "student") navigate("/student-dashboard");
-      else if (role === "tutor") navigate("/tutor-dashboard");
-      else navigate("/");
-
+      navigate("/select-role"); // redirect to role selection page
       reset();
     } catch (err) {
-      console.error("Signup error (details):", err);
-
-      // 🟥 Friendly Appwrite error display
-      if (err?.message?.includes("password")) {
-        setErrorMessage("Password must be between 8 and 256 characters long.");
-      } else if (err?.message?.includes("already exists")) {
+      console.error("Signup error:", err);
+      if (err?.message?.includes("already exists")) {
         setErrorMessage("This email is already registered.");
       } else {
-        setErrorMessage("Signup failed. Please check your details and try again.");
+        setErrorMessage("Signup failed. Try again.");
       }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  // ------------------------ Google OAuth Signup/Login ------------------------
+  const handleGoogleLogin = async () => {
+    try {
+      await account.createOAuth2Session(
+        "google",
+        window.location.origin,
+        window.location.origin
+      );
+    } catch (err) {
+      console.error("Google login error:", err);
+    }
+  };
+
+  // ------------------------ Render ------------------------
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="bg-white p-6 rounded-lg shadow-md w-full max-w-md"
-      >
-        <h2 className="text-2xl font-bold mb-4 text-center">Sign Up</h2>
+      {/* 🔹 Standard Signup Form */}
+      {!showRoleSelection && (
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="bg-white p-6 rounded-lg shadow-md w-full max-w-md"
+        >
+          <h2 className="text-2xl font-bold mb-4 text-center">Sign Up</h2>
 
-        {/* Full name */}
-        <input
-          {...register("name")}
-          type="text"
-          placeholder="Full Name"
-          className="border p-2 w-full mb-3 rounded focus:ring-2 focus:ring-purple-500 outline-none"
-          required
-        />
-
-        {/* Email */}
-        <input
-          {...register("email")}
-          type="email"
-          placeholder="Email"
-          className="border p-2 w-full mb-3 rounded focus:ring-2 focus:ring-purple-500 outline-none"
-          required
-        />
-
-        {/* Password with show/hide */}
-        <div className="relative mb-3">
           <input
-            {...register("password")}
-            type={showPassword ? "text" : "password"}
-            placeholder="Password"
-            className="border p-2 w-full rounded pr-10 focus:ring-2 focus:ring-purple-500 outline-none"
+            {...register("name")}
+            type="text"
+            placeholder="Full Name"
+            className="border p-2 w-full mb-3 rounded focus:ring-2 focus:ring-purple-500 outline-none"
             required
           />
+
+          <input
+            {...register("email")}
+            type="email"
+            placeholder="Email"
+            className="border p-2 w-full mb-3 rounded focus:ring-2 focus:ring-purple-500 outline-none"
+            required
+          />
+
+          <div className="relative mb-3">
+            <input
+              {...register("password")}
+              type={showPassword ? "text" : "password"}
+              placeholder="Password"
+              className="border p-2 w-full rounded pr-10 focus:ring-2 focus:ring-purple-500 outline-none"
+              required
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+
+          {errorMessage && (
+            <div className="bg-red-100 text-red-600 text-sm text-center p-2 rounded mb-3">
+              {errorMessage}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="bg-purple-600 text-white w-full py-2 rounded hover:bg-purple-700 transition flex justify-center items-center gap-2 disabled:opacity-60"
+          >
+            {isSubmitting ? "Creating Account..." : "Sign Up"}
+          </button>
+
+          <hr className="my-4" />
+
           <button
             type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+            onClick={handleGoogleLogin}
+            className="bg-red-500 text-white w-full py-2 rounded hover:bg-red-600 transition"
           >
-            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            Continue with Google
+          </button>
+        </form>
+      )}
+
+      {/* 🔹 Role Selection for Google users */}
+      {showRoleSelection && googleUser && (
+        <div className="p-6 max-w-md mx-auto bg-white rounded shadow">
+          <h2 className="text-xl font-bold mb-4">Select Your Role</h2>
+          <select
+            value={selectedRole}
+            onChange={(e) => setSelectedRole(e.target.value)}
+            className="border p-2 w-full rounded mb-4"
+          >
+            <option value="">Select Role</option>
+            <option value="student">Student</option>
+            <option value="tutor">Tutor</option>
+          </select>
+          <button
+            onClick={async () => {
+              if (!selectedRole) return alert("Please select a role");
+
+              // Insert Google user into users collection with permissions
+              const userDoc = await databases.createDocument(
+                DB,
+                USERS_COLLECTION,
+                ID.unique(),
+                {
+                  name: googleUser.name,
+                  email: googleUser.email,
+                  userId: googleUser.$id,
+                  role: selectedRole,
+                },
+                ["*"],
+                ["*"]
+              );
+
+              // ✅ If tutor, create tutor document linked to users collection
+              if (selectedRole === "tutor") {
+                await databases.createDocument(
+                  DB,
+                  TUTORS_TABLE,
+                  ID.unique(),
+                  {
+                    userId: googleUser.$id, // link to users.$id
+                    name: googleUser.name,
+                    email: googleUser.email,
+                    phone: "",       // optional
+                    subject: "",     // optional
+                    experience: "",  // optional
+                  },
+                  ["*"],
+                  ["*"]
+                );
+              }
+
+              // Navigate to dashboard
+              if (selectedRole === "student")
+                navigate("/student-dashboard");
+              else navigate("/tutor-dashboard");
+            }}
+            className="bg-purple-600 text-white px-4 py-2 rounded w-full"
+          >
+            Continue
           </button>
         </div>
-
-        {/* Role dropdown */}
-        <select
-          {...register("role")}
-          className="border p-2 w-full mb-3 rounded focus:ring-2 focus:ring-purple-500 outline-none"
-          required
-        >
-          <option value="">Select Role</option>
-          <option value="student">Student</option>
-          <option value="tutor">Tutor</option>
-        </select>
-
-        {/* 🔴 Error message display */}
-        {errorMessage && (
-          <div className="bg-red-100 text-red-600 text-sm text-center p-2 rounded mb-3">
-            {errorMessage}
-          </div>
-        )}
-
-        {/* Submit button */}
-        <button
-          type="submit"
-          className="bg-purple-600 text-white w-full py-2 rounded hover:bg-purple-700 transition"
-        >
-          Sign Up
-        </button>
-      </form>
+      )}
     </div>
   );
 }

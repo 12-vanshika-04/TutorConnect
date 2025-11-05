@@ -1,57 +1,90 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useDispatch, useSelector } from "react-redux";
+import { account, databases,ID } from "../utils/appwrite";
+import { Query } from "appwrite";
+import { useDispatch } from "react-redux";
 import { loginUser } from "../features/auth/authSlice";
 import { useNavigate } from "react-router-dom";
-import { databases } from "../utils/appwrite";
-import { Query } from "appwrite";
-import { Eye, EyeOff } from "lucide-react"; // 👁 icons
+import { Eye, EyeOff } from "lucide-react";
+
+const DB = import.meta.env.VITE_APPWRITE_DATABASE_ID;
+const USERS_COLLECTION = import.meta.env.VITE_APPWRITE_USERS_TABLE_ID;
 
 export default function Login() {
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit, reset } = useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user, error } = useSelector((state) => state.auth);
 
   const [showPassword, setShowPassword] = useState(false);
-  const [localError, setLocalError] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ------------------------ Email/Password Login ------------------------
   const onSubmit = async (data) => {
-    // ✅ Password validation before API call
-    if (data.password.length < 8 || data.password.length > 256) {
-      setLocalError("Password must be between 8 and 256 characters long.");
-      return;
-    }
-
-    setLocalError(""); // clear old errors
+    const { email, password } = data;
+    setErrorMessage("");
+    setIsSubmitting(true);
 
     try {
-      await dispatch(loginUser(data)).unwrap();
+      const result = await dispatch(loginUser({ email, password })).unwrap();
+
+      if (!result.role) navigate("/select-role");
+      else if (result.role === "student") navigate("/student-dashboard");
+      else if (result.role === "tutor") navigate("/tutor-dashboard");
+      else navigate("/");
+
+      reset();
     } catch (err) {
-      setLocalError("Login failed. Please try again.");
-      console.error(err);
+      console.error("Login error:", err);
+      setErrorMessage(err || "Login failed. Check your credentials.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // ✅ Redirect after successful login
-  useEffect(() => {
-    const fetchRoleAndRedirect = async () => {
-      if (user?.$id) {
-        const res = await databases.listDocuments(
-          import.meta.env.VITE_APPWRITE_DATABASE_ID,
-          import.meta.env.VITE_APPWRITE_USERS_TABLE_ID,
-          [Query.equal("userId", user.$id)]
-        );
+  // ------------------------ Google OAuth Login ------------------------
+  const handleGoogleLogin = async () => {
+    try {
+      await account.createOAuth2Session(
+        "google",
+        window.location.origin,
+        window.location.origin
+      );
+    } catch (err) {
+      console.error("Google login failed:", err);
+      alert("Google login failed 😕");
+    }
+  };
 
-        if (res.documents.length > 0) {
-          const role = res.documents[0].role;
-          navigate(role === "tutor" ? "/tutor-dashboard" : "/student-dashboard");
+  // ------------------------ Check Google session after redirect ------------------------
+  useEffect(() => {
+    const checkGoogleSession = async () => {
+      try {
+        const user = await account.get();
+        if (!user) return;
+
+        const res = await databases.listDocuments(DB, USERS_COLLECTION, [
+          Query.equal("userId", user.$id),
+        ]);
+
+        if (res.documents.length === 0) {
+          // New Google user → redirect to role selection
+          navigate("/select-role");
+          return;
         }
+
+        const role = res.documents[0].role;
+        if (!role) navigate("/select-role");
+        else if (role === "student") navigate("/student-dashboard");
+        else navigate("/tutor-dashboard");
+      } catch (err) {
+        console.log("No active session or error fetching user:", err);
       }
     };
-    fetchRoleAndRedirect();
-  }, [user, navigate]);
+    checkGoogleSession();
+  }, [navigate]);
 
+  // ------------------------ Render ------------------------
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <form
@@ -60,7 +93,6 @@ export default function Login() {
       >
         <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
 
-        {/* Email input */}
         <input
           {...register("email")}
           type="email"
@@ -69,7 +101,6 @@ export default function Login() {
           required
         />
 
-        {/* Password input with toggle */}
         <div className="relative mb-3">
           <input
             {...register("password")}
@@ -87,19 +118,37 @@ export default function Login() {
           </button>
         </div>
 
-        {/* 🔴 Error Message */}
-        {(localError || error) && (
+        {errorMessage && (
           <div className="bg-red-100 text-red-600 text-sm text-center p-2 rounded mb-3">
-            {localError || error}
+            {errorMessage}
           </div>
         )}
 
-        {/* Submit button */}
         <button
           type="submit"
-          className="bg-purple-600 text-white w-full py-2 rounded hover:bg-purple-700 transition"
+          disabled={isSubmitting}
+          className="bg-purple-600 text-white w-full py-2 rounded hover:bg-purple-700 transition flex justify-center items-center gap-2 disabled:opacity-60"
         >
-          Login
+          {isSubmitting ? "Logging in..." : "Login"}
+        </button>
+
+        <div className="flex items-center my-4">
+          <div className="flex-1 h-px bg-gray-300"></div>
+          <span className="px-3 text-gray-500 text-sm">or</span>
+          <div className="flex-1 h-px bg-gray-300"></div>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          className="w-full bg-white border border-gray-300 text-gray-700 py-2 rounded-lg shadow hover:bg-gray-100 flex items-center justify-center gap-2"
+        >
+          <img
+            src="https://developers.google.com/identity/images/g-logo.png"
+            alt="Google"
+            className="w-5 h-5"
+          />
+          <span>Continue with Google</span>
         </button>
       </form>
     </div>

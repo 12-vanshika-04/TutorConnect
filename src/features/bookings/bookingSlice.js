@@ -20,47 +20,15 @@ export const createBooking = createAsyncThunk(
   }
 );
 
-
-
-/* ---------------------- FETCH BOOKINGS (Auto Remove Expired) ---------------------- */
-// export const fetchBookingsByUser = createAsyncThunk(
-//   "bookings/fetchBookingsByUser",
-//   async ({ userId, role }, { rejectWithValue }) => {
-//     try {
-//       const res = await databases.listDocuments(DB, BOOKINGS_TABLE);
-//       const now = new Date();
-
-//       // ✅ Filter: only bookings of this user + not expired
-//       const docs = res.documents.filter((d) => {
-//         const isUserBooking =
-//           role === "tutor" ? d.tutorId === userId : d.studentId === userId;
-
-//         // prevent invalid date errors
-//         if (!d.date || !d.time) return false;
-
-//         const bookingTime = new Date(`${d.date}T${d.time}`);
-//         return isUserBooking && bookingTime > now; // keep upcoming bookings only
-//       });
-
-//       console.log(`🎯 ${role.toUpperCase()} Active Bookings:`, docs);
-//       return docs;
-//     } catch (err) {
-//       return rejectWithValue(err.message || err);
-//     }
-//   }
-// );
-
+/* ---------------------- FETCH BOOKINGS ---------------------- */
 export const fetchBookingsByUser = createAsyncThunk(
   "bookings/fetchBookingsByUser",
   async ({ userId, role }, { rejectWithValue }) => {
     try {
-      // role decides which field to query
       const queryField = role === "tutor" ? "tutorId" : "studentId";
-
       const res = await databases.listDocuments(DB, BOOKINGS_TABLE, [
         Query.equal(queryField, userId),
       ]);
-
       console.log(`🎯 Fetched ${role} bookings:`, res.documents);
       return res.documents;
     } catch (err) {
@@ -70,7 +38,6 @@ export const fetchBookingsByUser = createAsyncThunk(
   }
 );
 
-
 /* ---------------------- UPDATE BOOKING STATUS ---------------------- */
 export const updateBookingStatus = createAsyncThunk(
   "bookings/updateBookingStatus",
@@ -79,7 +46,6 @@ export const updateBookingStatus = createAsyncThunk(
       const cleanedData = Object.fromEntries(
         Object.entries(data).filter(([_, v]) => v !== undefined && v !== null)
       );
-
       const res = await databases.updateDocument(DB, BOOKINGS_TABLE, bookingId, cleanedData);
       console.log("✅ Booking updated:", res);
       return res;
@@ -94,13 +60,17 @@ export const updateBookingStatus = createAsyncThunk(
 const bookingSlice = createSlice({
   name: "bookings",
   initialState: { list: [], loading: false, error: null },
-  reducers: {},
+  reducers: {
+    clearBookings: (state) => {
+      state.list = [];
+      state.loading = false;
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
-      /* ---------- Create Booking ---------- */
-      .addCase(createBooking.pending, (state) => {
-        state.loading = true;
-      })
+      /* ---------- CREATE BOOKING ---------- */
+      .addCase(createBooking.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(createBooking.fulfilled, (state, action) => {
         state.loading = false;
         state.list.push(action.payload);
@@ -110,10 +80,8 @@ const bookingSlice = createSlice({
         state.error = action.payload;
       })
 
-      /* ---------- Fetch Bookings ---------- */
-      .addCase(fetchBookingsByUser.pending, (state) => {
-        state.loading = true;
-      })
+      /* ---------- FETCH BOOKINGS ---------- */
+      .addCase(fetchBookingsByUser.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(fetchBookingsByUser.fulfilled, (state, action) => {
         state.loading = false;
         state.list = action.payload;
@@ -123,13 +91,20 @@ const bookingSlice = createSlice({
         state.error = action.payload;
       })
 
-      /* ---------- Update Booking ---------- */
+      /* ---------- UPDATE BOOKING STATUS ---------- */
+      .addCase(updateBookingStatus.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(updateBookingStatus.fulfilled, (state, action) => {
+        state.loading = false;
         state.list = state.list.map((b) =>
           b.$id === action.payload.$id ? action.payload : b
         );
+      })
+      .addCase(updateBookingStatus.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });
 
+export const { clearBookings } = bookingSlice.actions;
 export default bookingSlice.reducer;

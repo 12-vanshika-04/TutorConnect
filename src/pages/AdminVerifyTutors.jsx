@@ -10,12 +10,10 @@ export default function AdminVerifyTutors() {
   const dbId = import.meta.env.VITE_APPWRITE_DATABASE_ID;
   const tutorsColId = import.meta.env.VITE_APPWRITE_TUTORS_TABLE_ID;
 
-  // ✅ Admin emails from environment variable
-  const adminEmails = import.meta.env.VITE_ADMIN_EMAILS.split(",").map((e) =>
-    e.trim()
-  );
+  // ✅ Admin emails from .env
+  const adminEmails = import.meta.env.VITE_ADMIN_EMAILS.split(",").map((e) => e.trim());
 
-  // 🔹 Step 1: Verify admin access
+  // 🔹 Verify admin and load pending tutors
   useEffect(() => {
     const init = async () => {
       try {
@@ -35,7 +33,7 @@ export default function AdminVerifyTutors() {
     init();
   }, []);
 
-  // 🔹 Step 2: Fetch tutors with status "pending"
+  // 🔹 Fetch tutors whose verified = false
   const fetchPendingTutors = async () => {
     try {
       const res = await databases.listDocuments(dbId, tutorsColId, [
@@ -47,12 +45,11 @@ export default function AdminVerifyTutors() {
     }
   };
 
-  // 🔹 Step 3: Verify tutor
+  // 🔹 Verify tutor (mark verified = true)
   const handleVerify = async (tutorId) => {
     try {
       await databases.updateDocument(dbId, tutorsColId, tutorId, {
         verified: true,
-
       });
       setTutors((prev) => prev.filter((t) => t.$id !== tutorId));
       alert("✅ Tutor verified successfully!");
@@ -62,14 +59,12 @@ export default function AdminVerifyTutors() {
     }
   };
 
-  // 🔹 Step 4: Reject tutor (mark as rejected, keep record)
+  // 🔹 Reject tutor (delete document)
   const handleReject = async (tutorId) => {
     try {
-      await databases.updateDocument(dbId, tutorsColId, tutorId, {
-        verified: false,
-      });
+      await databases.deleteDocument(dbId, tutorsColId, tutorId);
       setTutors((prev) => prev.filter((t) => t.$id !== tutorId));
-      alert("❌ Tutor request marked as rejected.");
+      alert("❌ Tutor rejected and removed.");
     } catch (err) {
       console.error("Error rejecting tutor:", err);
       alert("Failed to reject tutor.");
@@ -92,7 +87,7 @@ export default function AdminVerifyTutors() {
       </h2>
 
       {tutors.length === 0 ? (
-        <p className="text-gray-600">No new tutor requests pending ✅</p>
+        <p className="text-gray-600">No pending tutor requests ✅</p>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {tutors.map((tutor) => (
@@ -100,16 +95,10 @@ export default function AdminVerifyTutors() {
               key={tutor.$id}
               className="border border-gray-200 p-4 rounded-xl shadow bg-white"
             >
-              <h3 className="text-lg font-semibold text-purple-700">
-                {tutor.name}
-              </h3>
-              <p>Name: {tutor.name}</p>
+              <h3 className="text-lg font-semibold text-purple-700">{tutor.name}</h3>
               <p>Email: {tutor.email}</p>
               <p>Phone: {tutor.phone}</p>
               <p>Subject: {tutor.subject}</p>
-              <p className="mt-2 text-sm text-yellow-600 font-medium">
-                Status: Pending Verification ⏳
-              </p>
 
               <div className="flex gap-3 mt-4">
                 <button

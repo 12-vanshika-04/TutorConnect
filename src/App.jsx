@@ -1,4 +1,5 @@
 import React from "react";
+import { useSelector } from "react-redux";
 import { createBrowserRouter, RouterProvider, Route, createRoutesFromElements } from "react-router-dom";
 import Layout from "./Layout";
 import Home from "./pages/Home";
@@ -12,6 +13,7 @@ import TutorDashboard from "./pages/TutorDashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import AdminVerifyTutors from "./pages/AdminVerifyTutors";
 import ProtectedRoute from "./components/ProtectedRoute";
+import GlobalLoader from "./components/GlobalLoader";
 
 const router = createBrowserRouter(
   createRoutesFromElements(
@@ -63,5 +65,12 @@ const router = createBrowserRouter(
 );
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  const { status } = useSelector((state) => state.auth);
+
+  return (
+    <>
+      {status === "loading" && <GlobalLoader text="Loading your data..." />}
+      <RouterProvider router={router} />
+    </>
+  );
 }

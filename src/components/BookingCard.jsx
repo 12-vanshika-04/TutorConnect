@@ -1,11 +1,11 @@
 import React, { useState } from "react";
+import ButtonLoader from "./ButtonLoader";
 
 export default function BookingCard({ booking, role, onAccept, onReject, onComplete }) {
-  const [showReasonBox, setShowReasonBox] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
+  const [loadingAction, setLoadingAction] = useState(null); // "accept" | "reject" | "complete"
 
-  // ✅ Safe date parsing + formatting
-  let formattedDate = "Invalid Date";
+  // Format date & time
+  let formattedDate = "Not Scheduled";
   try {
     const dateTime = new Date(`${booking.date}T${booking.time}`);
     if (!isNaN(dateTime)) {
@@ -14,28 +14,43 @@ export default function BookingCard({ booking, role, onAccept, onReject, onCompl
         timeStyle: "short",
       });
     }
-  } catch {
-    formattedDate = "Invalid Date";
-  }
+  } catch {}
 
-  // ✅ Skip rendering expired bookings (handled at page level too)
+  // Check for expired bookings
   const bookingDateTime = new Date(`${booking.date}T${booking.time}`);
   const isExpired = !isNaN(bookingDateTime) && bookingDateTime < new Date();
 
-  const handleRejectClick = () => {
-    if (!showReasonBox) {
-      setShowReasonBox(true);
-      return;
+  const handleAcceptClick = async () => {
+    if (!onAccept) return;
+    try {
+      setLoadingAction("accept");
+      await onAccept(booking);
+    } finally {
+      setLoadingAction(null);
     }
-    if (!rejectReason.trim()) {
-      alert("Please enter a reason for rejection.");
-      return;
-    }
-    onReject(booking, rejectReason);
-    setShowReasonBox(false);
-    setRejectReason("");
   };
 
+  const handleRejectClick = async () => {
+    if (!onReject) return;
+    try {
+      setLoadingAction("reject");
+      await onReject(booking);
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleCompleteClick = async () => {
+    if (!onComplete) return;
+    try {
+      setLoadingAction("complete");
+      await onComplete(booking);
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  // Status colors
   const statusColors = {
     pending: "text-yellow-600 bg-yellow-100",
     accepted: "text-green-600 bg-green-100",
@@ -44,7 +59,6 @@ export default function BookingCard({ booking, role, onAccept, onReject, onCompl
     expired: "text-gray-500 bg-gray-100",
   };
 
-  // ⏳ Optional: mark expired ones visually
   const displayStatus = isExpired && booking.status === "pending" ? "expired" : booking.status;
 
   return (
@@ -67,64 +81,59 @@ export default function BookingCard({ booking, role, onAccept, onReject, onCompl
       <p className="text-sm text-gray-600 mb-1">
         <strong>Date & Time:</strong> {formattedDate}
       </p>
+      {role === "tutor" && (
+  <p className="text-sm text-gray-600 mb-1">
+    <strong>Student:</strong> {booking.student_name} <br />
+    <strong>Email:</strong> <span className="text-gray-500">{booking.student_email}</span>
+  </p>
+)}
 
-      {role === "tutor" ? (
-        <p className="text-sm text-gray-600 mb-1">
-          <strong>Student:</strong> {booking.student_name} ({booking.student_email})
-        </p>
-      ) : (
-        <p className="text-sm text-gray-600 mb-1">
-          <strong>Tutor:</strong> {booking.tutor_name} ({booking.tutor_phone})
-        </p>
-      )}
+{role === "student" && (
+  <p className="text-sm text-gray-600 mb-1">
+    <strong>Tutor:</strong> {booking.tutor_name} <br />
+    <strong>Email:</strong> <span className="text-gray-500">{booking.tutor_email || booking.tutor_phone}</span>
+  </p>
+)}
 
       {booking.message && (
         <p className="text-sm text-gray-600 mt-2 italic">“{booking.message}”</p>
       )}
 
       {booking.rejectReason && (
-        <p className="text-sm text-red-600 mt-2">
+        <p className="text-sm text-red-400 mt-2">
           <strong>Rejection Reason:</strong> {booking.rejectReason}
         </p>
       )}
 
-      {/* 🟢 Tutor Actions */}
+      {/* Actions row */}
       {!isExpired && (
-        <div className="mt-4 flex flex-col gap-2">
+        <div className="mt-4 flex gap-2 flex-wrap">
           {role === "tutor" && booking.status === "pending" && (
             <>
               <button
-                onClick={() => onAccept(booking)}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm"
+                onClick={handleAcceptClick}
+                disabled={loadingAction === "accept"}
+                className="flex-1 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-500 transition text-sm flex justify-center items-center gap-2"
               >
-                Accept Booking
+                {loadingAction === "accept" ? <><ButtonLoader size={16} color="white" /> Accepting...</> : "Accept"}
               </button>
-
-              {showReasonBox && (
-                <div className="animate-fadeIn">
-                  <textarea
-                    value={rejectReason}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                    placeholder="Enter reason for rejection"
-                    className="border p-2 rounded w-full text-sm focus:ring-2 focus:ring-red-400 outline-none mt-1"
-                  />
-                </div>
-              )}
               <button
                 onClick={handleRejectClick}
-                className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
+                disabled={loadingAction === "reject"}
+                className="flex-1 bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-500 transition text-sm flex justify-center items-center gap-2"
               >
-                {showReasonBox ? "Submit Rejection" : "Reject Booking"}
+                {loadingAction === "reject" ? <><ButtonLoader size={16} color="white" /> Rejecting...</> : "Reject"}
               </button>
             </>
           )}
 
-          {role === "tutor" && booking.status === "accepted" && (
+          {role === "tutor" && booking.status === "accepted" && onComplete && (
             <button
-              onClick={() => onComplete(booking)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm"
+              onClick={handleCompleteClick}
+              disabled={loadingAction === "complete"}
+              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm flex justify-center items-center gap-2"
             >
-              Mark as Completed
+              {loadingAction === "complete" ? <><ButtonLoader size={16} color="white" /> Completing...</> : "Mark as Completed"}
             </button>
           )}
         </div>

@@ -57,7 +57,16 @@ export default function StudentDashboard() {
     <div key={b.$id} className="bg-white border rounded-lg p-4 shadow">
       <p><strong>Tutor:</strong> {b.tutor_name}</p>
       <p><strong>Subject:</strong> {b.subject}</p>
-      <p><strong>Date & Time:</strong> {format(b.date, b.time)}</p>
+
+      {/* 🕓 Show date & time only when accepted */}
+      {b.status === "accepted" ? (
+        <p><strong>Date & Time:</strong> {format(b.date, b.time)}</p>
+      ) : (
+        <p className="italic text-gray-500">
+          📅 Awaiting confirmation
+        </p>
+      )}
+
       <p>
         <strong>Status:</strong>{" "}
         <span

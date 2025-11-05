@@ -1,10 +1,26 @@
-import React, { useState } from "react";
+// src/pages/Home.jsx
+import React, { useState, useEffect } from "react";
 import img1 from "../assets/class.jpg";
 import { useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { checkGoogleUser } from "../features/auth/authSlice";
 
 const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const { user, role } = useSelector((state) => state.auth);
+
+  // Fetch current user on page load
+  useEffect(() => {
+    dispatch(checkGoogleUser());
+  }, [dispatch]);
+
+  const handleSearch = () => {
+    if (!searchQuery.trim()) return alert("Please enter a subject or location");
+    navigate(`/find-tutors?query=${encodeURIComponent(searchQuery.trim())}`);
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -16,10 +32,8 @@ const Home = () => {
           backgroundPosition: "center",
         }}
       >
-        {/* Dark Overlay */}
         <div className="absolute inset-0 bg-black bg-opacity-60"></div>
 
-        {/* Content */}
         <div className="relative z-10 md:w-1/2">
           <h1 className="text-5xl md:text-6xl font-extrabold mb-4">
             <span className="text-purple-400">Tutor</span>Connect
@@ -42,16 +56,21 @@ const Home = () => {
               className="px-4 py-3 rounded-lg text-gray-800 w-72 md:w-96 focus:outline-none shadow-md"
             />
             <button
-              onClick={() => {
-                if (!searchQuery.trim())
-                  return alert("Please enter a subject or location");
-                navigate(`/find-tutors?query=${encodeURIComponent(searchQuery.trim())}`);
-              }}
+              onClick={handleSearch}
               className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-semibold transition w-36 text-center"
             >
               Search
             </button>
           </div>
+
+          {/* Welcome message */}
+          {role && user && (
+            <p className="mt-4 text-lg text-gray-200">
+              {role === "student"
+                ? "You are logged in as a Student."
+                : "You are logged in as a Tutor."}
+            </p>
+          )}
         </div>
       </section>
 
@@ -105,38 +124,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      {/* Categories Section */}
-{/* <section className="bg-purple-50 py-16 px-8 md:px-20">
-  <h2 className="text-3xl font-bold text-center mb-10 text-gray-800">
-    Explore by Category
-  </h2>
-
-  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-    {[
-      { name: "Academics", icon: "📘" },
-      { name: "Languages", icon: "🗣️" },
-      { name: "Dance", icon: "💃" },
-      { name: "Music", icon: "🎵" },
-      { name: "Art & Craft", icon: "🎨" },
-      { name: "Coding", icon: "💻" },
-      { name: "Sports", icon: "⚽" },
-      { name: "Yoga", icon: "🧘‍♀️" },
-    ].map((cat, i) => (
-      <div
-        key={i}
-        onClick={() =>
-          navigate(`/find-tutors?category=${encodeURIComponent(cat.name)}`)
-        }
-        className="bg-white p-8 rounded-2xl shadow-md text-center text-purple-700 font-semibold hover:bg-purple-100 hover:scale-105 transition-transform cursor-pointer flex flex-col items-center justify-center"
-      >
-        <span className="text-4xl mb-3">{cat.icon}</span>
-        <span className="text-lg">{cat.name}</span>
-      </div>
-    ))}
-  </div>
-</section> */}
-
     </div>
   );
 };

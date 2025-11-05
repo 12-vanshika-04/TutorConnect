@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { Navigate } from "react-router-dom";
 import { databases, storage, ID } from "../utils/appwrite";
+import ButtonLoader from "../components/ButtonLoader";
 
 function RegisterTutor() {
   const { register, handleSubmit, reset } = useForm();
@@ -10,11 +11,13 @@ function RegisterTutor() {
   const [previewQualification, setPreviewQualification] = useState(null);
   const [identityFileName, setIdentityFileName] = useState("");
   const [qualificationFileName, setQualificationFileName] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const user = useSelector((state) => state.auth.user);
   if (!user) return <Navigate to="/login" replace />;
 
   const onSubmit = async (data) => {
+    setIsSubmitting(true);
     try {
       // ✅ Upload files
       const identityUpload = await storage.createFile(
@@ -63,6 +66,9 @@ function RegisterTutor() {
     } catch (error) {
       console.error("❌ Error registering tutor:", error);
       alert("Failed to register tutor: " + (error.message || error));
+    }
+    finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -180,11 +186,21 @@ function RegisterTutor() {
         {renderPreview(previewQualification, qualificationFileName)}
 
         <button
-          type="submit"
-          className="w-full bg-green-600 text-white py-2 rounded mt-6 hover:bg-green-700"
-        >
-          Submit
-        </button>
+  type="submit"
+  disabled={isSubmitting}
+  className={`w-full flex items-center justify-center gap-2 bg-green-600 text-white py-2 rounded mt-6 hover:bg-green-700 transition ${
+    isSubmitting ? "opacity-70 cursor-not-allowed" : ""
+  }`}
+>
+  {isSubmitting ? (
+    <>
+      <ButtonLoader size={18} color="white" />
+      <span>Submitting...</span>
+    </>
+  ) : (
+    "Submit"
+  )}
+</button>
       </form>
     </div>
   );
