@@ -91,7 +91,7 @@ const Home = () => {
               Verified Tutors
             </h3>
             <p className="text-center text-gray-600">
-              Each tutor’s identity and documents are verified through DigiLocker.
+              Each tutor’s identity and documents are verified.
             </p>
           </div>
 
@@ -105,7 +105,7 @@ const Home = () => {
               Local & Home Tutors
             </h3>
             <p className="text-center text-gray-600">
-              Find tutors near your home or within your locality with accurate distance mapping.
+              Find tutors near your home or within your locality.
             </p>
           </div>
 

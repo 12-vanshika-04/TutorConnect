@@ -165,15 +165,24 @@ export default function Signup() {
             {isSubmitting ? "Creating Account..." : "Sign Up"}
           </button>
 
-          <hr className="my-4" />
+          <div className="flex items-center my-4">
+          <div className="flex-1 h-px bg-gray-300"></div>
+          <span className="px-3 text-gray-500 text-sm">or</span>
+          <div className="flex-1 h-px bg-gray-300"></div>
+        </div>
 
-          <button
-            type="button"
-            onClick={handleGoogleLogin}
-            className="bg-red-500 text-white w-full py-2 rounded hover:bg-red-600 transition"
-          >
-            Continue with Google
-          </button>
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          className="w-full bg-white border border-gray-300 text-gray-700 py-2 rounded-lg shadow hover:bg-gray-100 flex items-center justify-center gap-2"
+        >
+          <img
+            src="https://developers.google.com/identity/images/g-logo.png"
+            alt="Google"
+            className="w-5 h-5"
+          />
+          <span>Continue with Google</span>
+        </button>
         </form>
       )}
 
