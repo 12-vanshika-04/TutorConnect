@@ -20,12 +20,17 @@ export default function Navbar() {
     if (!user) return;
 
     try {
-      // Update role in Appwrite DB via Redux thunk
       await dispatch(updateRole({ userId: user.$id, role: newRole })).unwrap();
+
+      // ✅ Navigate based on role
+      if (newRole === "student") navigate("/student-dashboard");
+      else if (newRole === "tutor") navigate("/tutor-dashboard");
+      else if (newRole === "admin") navigate("/admin-verify");
     } catch (err) {
       console.error("Error updating role:", err);
     }
   };
+
 
   /* ------------------ Logout ------------------ */
   const handleLogout = async () => {
@@ -53,7 +58,7 @@ export default function Navbar() {
             Register as Tutor
           </Link>
         )}
-        {(currentRole === "student" || currentRole === "admin") && (
+        {(currentRole === "student" || currentRole === "admin" || !user) && (
           <Link
             to="/find-tutors"
             className="bg-purple-600 hover:bg-purple-400 text-white font-semibold px-4 py-2 rounded-lg transition"
@@ -81,33 +86,38 @@ export default function Navbar() {
           >
             <option value="student">Student</option>
             <option value="tutor">Tutor</option>
+            {/* <option value="admin">Admin</option> */}
           </select>
         )}
 
-        {/* Dashboard Links */}
-        {currentRole === "student" && user && (
-          <Link
-            to="/student-dashboard"
-            className="bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600"
-          >
-            Student Dashboard
-          </Link>
-        )}
-        {currentRole === "tutor" && user && (
-          <Link
-            to="/tutor-dashboard"
-            className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600"
-          >
-            Tutor Dashboard
-          </Link>
-        )}
-        {currentRole === "admin" && user && (
-          <Link
-            to="/admin-verify"
-            className="bg-yellow-500 text-white px-3 py-2 rounded hover:bg-yellow-600"
-          >
-            Admin Panel
-          </Link>
+        {/* ✅ Dashboard Links (Admin sees all) */}
+        {user && (
+          <>
+            {(currentRole === "student" || currentRole === "admin") && (
+              <Link
+                to="/student-dashboard"
+                className="bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600"
+              >
+                Student Dashboard
+              </Link>
+            )}
+            {(currentRole === "tutor" || currentRole === "admin") && (
+              <Link
+                to="/tutor-dashboard"
+                className="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600"
+              >
+                Tutor Dashboard
+              </Link>
+            )}
+            {currentRole === "admin" && (
+              <Link
+                to="/admin-verify"
+                className="bg-yellow-500 text-white px-3 py-2 rounded hover:bg-yellow-600"
+              >
+                Admin Panel
+              </Link>
+            )}
+          </>
         )}
 
         {/* Auth buttons */}

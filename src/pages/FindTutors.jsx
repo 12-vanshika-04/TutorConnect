@@ -4,27 +4,16 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { fetchTutors } from "../features/tutors/tutorSlice";
 import TutorCard from "../components/TutorCard";
+import { account } from "../utils/appwrite"; // ✅ Added for login check
 
 export default function FindTutors() {
-  
   const dispatch = useDispatch();
   const tutors = useSelector((s) => s.tutors.list);
   const loading = useSelector((s) => s.tutors.loading);
   const { search } = useLocation();
 
-  // ✅ get ?query= from URL (from Home page)
   const queryParams = new URLSearchParams(search);
   const searchQuery = queryParams.get("query")?.trim().toLowerCase() || "";
-  // useEffect(() => {
-  //   const params = new URLSearchParams(location.search);
-  //   const category = params.get("category");
-  //   if (category) {
-  //     setFilters((prev) => ({ ...prev, subject: category }));
-  //     dispatch(fetchTutors({ subject: category, verified: true }));
-  //   } else {
-  //     dispatch(fetchTutors({ verified: true }));
-  //   }
-  // }, [location, dispatch]);
 
   const [filters, setFilters] = useState({
     subject: "",
@@ -37,9 +26,17 @@ export default function FindTutors() {
   });
 
   const [myLocation, setMyLocation] = useState(null);
+  const [user, setUser] = useState(null); // ✅ Added state to detect logged-in user
 
   useEffect(() => {
+    // ✅ Fetch tutors for everyone (guest + logged-in)
     dispatch(fetchTutors({ verified: true }));
+
+    // ✅ Check if user is logged in
+    account
+      .get()
+      .then((res) => setUser(res))
+      .catch(() => setUser(null)); // guest mode
   }, [dispatch]);
 
   const applyFilters = () => {
@@ -70,17 +67,15 @@ export default function FindTutors() {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
-  // ✅ Filter tutors based on both user filters + search query
+  // ✅ Keep your full filtering logic unchanged
   const filtered = tutors.filter((t) => {
     if (!t.verified) return false;
 
-    // ✅ Global Search (from homepage)
     if (searchQuery) {
       const combinedFields = `${t.subject || ""} ${t.location || ""} ${t.standard || ""}`.toLowerCase();
       if (!combinedFields.includes(searchQuery)) return false;
     }
 
-    // ✅ Subject Filter
     if (
       filters.subject &&
       (!t.subject ||
@@ -88,7 +83,6 @@ export default function FindTutors() {
     )
       return false;
 
-    // ✅ Improved Standard Filter (supports 6, Class 10, 6-8, Class 6 to 8, etc.)
     if (filters.standard && t.standard) {
       const input = filters.standard.trim().toLowerCase();
       const tutorStandard = String(t.standard).trim().toLowerCase();
@@ -116,7 +110,6 @@ export default function FindTutors() {
       }
     }
 
-    // ✅ Location Filter
     if (
       filters.location &&
       (!t.location ||
@@ -124,25 +117,21 @@ export default function FindTutors() {
     )
       return false;
 
-    // ✅ Fees Filters
     if (filters.minFees && Number(t.fees) < Number(filters.minFees)) return false;
     if (filters.maxFees && Number(t.fees) > Number(filters.maxFees)) return false;
 
-    // ✅ Gender Filter
     if (
       filters.gender &&
       (!t.gender || t.gender.toLowerCase() !== filters.gender.toLowerCase())
     )
       return false;
 
-    // ✅ Experience Filter
     if (filters.experience && Number(t.experience) < Number(filters.experience))
       return false;
 
     return true;
   });
 
-  // ✅ Sort by distance (if user location available)
   const sorted = myLocation
     ? filtered
         .map((t) => ({
@@ -216,7 +205,11 @@ export default function FindTutors() {
       ) : (
         <div className="grid md:grid-cols-3 gap-4">
           {sorted.map((t) => (
-            <TutorCard key={t.$id} tutor={t} />
+            <TutorCard
+              key={t.$id}
+              tutor={t}
+              isGuest={!user} // ✅ Pass guest info to TutorCard
+            />
           ))}
         </div>
       )}

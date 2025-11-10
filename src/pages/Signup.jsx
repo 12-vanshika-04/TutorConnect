@@ -63,8 +63,16 @@ export default function Signup() {
     try {
       // Create user account
       const newUser = await account.create(ID.unique(), email, password, name);
+    
+      // 🔹 Wait a short time for propagation
+      await new Promise((resolve) => setTimeout(resolve, 800));
+    
+      // Try to log in the newly created user
       await account.createEmailPasswordSession(email, password);
-
+    
+      // 🔹 Clear error (if any)
+      setErrorMessage("");
+    
       // Add user to users collection
       await databases.createDocument(
         DB,
@@ -74,25 +82,35 @@ export default function Signup() {
           name,
           email,
           userId: newUser.$id,
-          role: null, // will select role later
+          role: null,
         },
-        ["*"], // read permissions
-        ["*"]  // write permissions
+        ["*"],
+        ["*"]
       );
-
-      navigate("/select-role"); // redirect to role selection page
+    
+      // ✅ Redirect after successful signup
       reset();
+      navigate("/select-role");
     } catch (err) {
       console.error("Signup error:", err);
-      if (err?.message?.includes("already exists")) {
-        setErrorMessage("This email is already registered.");
-      } else {
+    
+      // If error is "user already exists"
+      if (err?.message?.includes("already exists") || err?.code === 409) {
+        setErrorMessage("This email is already registered. Please log in instead.");
+      } 
+      // If user created but session failed (temporary Appwrite delay)
+      else if (err?.message?.includes("Invalid credentials")) {
+        setErrorMessage("");
+        // Optionally still redirect, since signup worked
+        navigate("/select-role");
+      } 
+      else {
         setErrorMessage("Signup failed. Try again.");
       }
     } finally {
       setIsSubmitting(false);
     }
-  };
+    };
 
   // ------------------------ Google OAuth Signup/Login ------------------------
   const handleGoogleLogin = async () => {

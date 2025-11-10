@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
 
-export default function TutorCard({ tutor }) {
+export default function TutorCard({ tutor, isGuest = false }) { // ✅ added isGuest prop (default false)
   const {
     $id,
     name = "Unnamed Tutor",
@@ -23,7 +23,7 @@ export default function TutorCard({ tutor }) {
   // ✅ Format standard
   const displayStandard =
     typeof standard === "string"
-      ? standard.replace(/class\s*/i, "Class ")
+      ? standard.replace(/class\\s*/i, "Class ")
       : standard
       ? `Class ${standard}`
       : "N/A";
@@ -81,18 +81,16 @@ export default function TutorCard({ tutor }) {
         )}
 
         {/* Experience */}
-{displayExperience && (
-  <p className="text-sm text-gray-600 mb-1">
-    🧠 {displayExperience}
-  </p>
-)}
-        {/* Bio */}
-{bio && (
-  <p className="text-sm text-gray-600 mb-2 leading-snug">
-    💬 {bio.length > 100 ? bio.slice(0, 100) + "..." : bio}
-  </p>
-)}
+        {displayExperience && (
+          <p className="text-sm text-gray-600 mb-1">🧠 {displayExperience}</p>
+        )}
 
+        {/* Bio */}
+        {bio && (
+          <p className="text-sm text-gray-600 mb-2 leading-snug">
+            💬 {bio.length > 100 ? bio.slice(0, 100) + "..." : bio}
+          </p>
+        )}
 
         {/* Location */}
         <p className="text-sm text-gray-700 mb-1">📍 {location}</p>
@@ -100,7 +98,7 @@ export default function TutorCard({ tutor }) {
         {/* Fees */}
         {fees && (
           <p className="text-sm text-gray-800 font-semibold mb-1">
-            💰 ₹{fees}/month
+            💰 ₹{fees}/month per subject
           </p>
         )}
 
@@ -114,12 +112,21 @@ export default function TutorCard({ tutor }) {
 
       {/* Buttons */}
       <div className="mt-3 flex justify-center items-center gap-3">
-        <Link
-          to={`/book/${$id}`}
-          className="bg-purple-500 text-white text-center text-md font-medium px-5 py-2 rounded-lg hover:bg-purple-600 transition w-full"
-        >
-          Book Appointment
-        </Link>
+        {isGuest ? (
+          <button
+            disabled
+            className="bg-gray-400 text-white text-center text-md font-medium px-5 py-2 rounded-lg cursor-not-allowed w-full"
+          >
+            Login to Book
+          </button>
+        ) : (
+          <Link
+            to={`/book/${$id}`}
+            className="bg-purple-500 text-white text-center text-md font-medium px-5 py-2 rounded-lg hover:bg-purple-600 transition w-full"
+          >
+            Book Appointment
+          </Link>
+        )}
       </div>
     </div>
   );

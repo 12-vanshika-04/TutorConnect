@@ -144,7 +144,7 @@ function RegisterTutor() {
               min: { value: 0, message: "Fees cannot be negative" },
             })}
             type="number"
-            placeholder="Fees per month"
+            placeholder="Fees per month (per subject)"
             className="input"
             min="0"
             onInput={(e) => {
