@@ -19,7 +19,6 @@ export default function Login() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ------------------------ Email/Password Login ------------------------
   const onSubmit = async (data) => {
     const { email, password } = data;
     setErrorMessage("");
@@ -42,7 +41,6 @@ export default function Login() {
     }
   };
 
-  // ------------------------ Google OAuth Login ------------------------
   const handleGoogleLogin = async () => {
     try {
       await account.createOAuth2Session(
@@ -56,7 +54,6 @@ export default function Login() {
     }
   };
 
-  // ------------------------ Check Google session after redirect ------------------------
   useEffect(() => {
     const checkGoogleSession = async () => {
       try {
@@ -84,7 +81,7 @@ export default function Login() {
     checkGoogleSession();
   }, [navigate]);
 
-  // ------------------------ Render ------------------------
+
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <form

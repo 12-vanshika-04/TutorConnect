@@ -21,7 +21,6 @@ export default function Signup() {
   const [showRoleSelection, setShowRoleSelection] = useState(false);
   const [selectedRole, setSelectedRole] = useState("");
 
-  // ------------------ Handle Google OAuth after redirect ------------------
   useEffect(() => {
     const handleGoogleUser = async () => {
       try {
@@ -49,7 +48,6 @@ export default function Signup() {
     handleGoogleUser();
   }, [navigate]);
 
-  // ------------------------ Standard Email/Password Signup ------------------------
   const onSubmit = async (data) => {
     const { name, email, password } = data;
     if (password.length < 8) {
@@ -64,16 +62,12 @@ export default function Signup() {
       // Create user account
       const newUser = await account.create(ID.unique(), email, password, name);
     
-      // 🔹 Wait a short time for propagation
       await new Promise((resolve) => setTimeout(resolve, 800));
     
-      // Try to log in the newly created user
       await account.createEmailPasswordSession(email, password);
     
-      // 🔹 Clear error (if any)
       setErrorMessage("");
     
-      // Add user to users collection
       await databases.createDocument(
         DB,
         USERS_COLLECTION,
@@ -88,7 +82,6 @@ export default function Signup() {
         ["*"]
       );
     
-      // ✅ Redirect after successful signup
       reset();
       navigate("/select-role");
     } catch (err) {
@@ -112,7 +105,6 @@ export default function Signup() {
     }
     };
 
-  // ------------------------ Google OAuth Signup/Login ------------------------
   const handleGoogleLogin = async () => {
     try {
       await account.createOAuth2Session(
@@ -125,7 +117,6 @@ export default function Signup() {
     }
   };
 
-  // ------------------------ Render ------------------------
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       {/* 🔹 Standard Signup Form */}
@@ -204,7 +195,6 @@ export default function Signup() {
         </form>
       )}
 
-      {/* 🔹 Role Selection for Google users */}
       {showRoleSelection && googleUser && (
         <div className="p-6 max-w-md mx-auto bg-white rounded shadow">
           <h2 className="text-xl font-bold mb-4">Select Your Role</h2>
@@ -221,7 +211,7 @@ export default function Signup() {
             onClick={async () => {
               if (!selectedRole) return alert("Please select a role");
 
-              // Insert Google user into users collection with permissions
+              // Insert Google user into users collection with permission
               const userDoc = await databases.createDocument(
                 DB,
                 USERS_COLLECTION,
@@ -236,7 +226,6 @@ export default function Signup() {
                 ["*"]
               );
 
-              // ✅ If tutor, create tutor document linked to users collection
               if (selectedRole === "tutor") {
                 await databases.createDocument(
                   DB,

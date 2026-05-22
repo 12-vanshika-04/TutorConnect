@@ -31,7 +31,6 @@ export default function StudentDashboard() {
   const expired = [];
   const rejected = [];
 
-  // ✅ Categorize bookings smartly
   bookings.forEach((b) => {
     const dateTime = new Date(`${b.date}T${b.time}`);
 
@@ -58,7 +57,6 @@ export default function StudentDashboard() {
       <p><strong>Tutor:</strong> {b.tutor_name}</p>
       <p><strong>Subject:</strong> {b.subject}</p>
 
-      {/* 🕓 Show date & time only when accepted */}
       {b.status === "accepted" ? (
         <p><strong>Date & Time:</strong> {format(b.date, b.time)}</p>
       ) : (
@@ -86,7 +84,6 @@ export default function StudentDashboard() {
         </span>
       </p>
 
-      {/* 📞 Tutor contact visible only if accepted */}
       {b.status === "accepted" && (
         <>
           <p><strong>Email:</strong> {b.tutor_email}</p>
@@ -111,7 +108,6 @@ export default function StudentDashboard() {
     <div className="max-w-5xl mx-auto p-6 space-y-8">
       <h2 className="text-2xl font-bold text-purple-700">Student Dashboard</h2>
 
-      {/* 🟡 Pending Requests */}
       <section>
         <h3 className="text-xl font-semibold mb-3 text-yellow-700">Pending Requests</h3>
         {pending.length ? (
@@ -121,7 +117,6 @@ export default function StudentDashboard() {
         )}
       </section>
 
-      {/* 🟢 Upcoming (Accepted) */}
       <section>
         <h3 className="text-xl font-semibold mb-3 text-green-700">Upcoming Bookings</h3>
         {upcoming.length ? (
@@ -131,7 +126,6 @@ export default function StudentDashboard() {
         )}
       </section>
 
-      {/* 🕓 Expired */}
       <section>
         <h3 className="text-xl font-semibold mb-3 text-gray-700">Expired Bookings</h3>
         {expired.length ? (
@@ -141,7 +135,6 @@ export default function StudentDashboard() {
         )}
       </section>
 
-      {/* ❌ Rejected */}
       <section>
         <h3 className="text-xl font-semibold mb-3 text-red-700">Rejected Bookings</h3>
         {rejected.length ? (

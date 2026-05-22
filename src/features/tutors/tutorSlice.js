@@ -11,7 +11,6 @@ export const fetchTutors = createAsyncThunk(
       if (filters.subject)
         queries.push(Query.contains("subject", filters.subject));
 
-      // ✅ Updated line — partial matching for location
       if (filters.location)
         queries.push(Query.search("location", filters.location));
 

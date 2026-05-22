@@ -48,7 +48,6 @@ export default function TutorDashboard() {
           const tutorRecord = tutorRes.documents[0];
           setTutorDoc(tutorRecord);
 
-          // Fetch bookings using Appwrite user ID
           dispatch(fetchBookingsByUser({ userId: user.$id, role: "tutor" }));
         } else {
           console.error("Tutor document not found for this user.");
@@ -60,7 +59,6 @@ export default function TutorDashboard() {
     };
     fetchTutorData();
 
-    // Clear bookings if role is not tutor
     if (userRole !== "tutor") {
       dispatch({ type: "bookings/fetchBookingsByUser/fulfilled", payload: [] });
     }

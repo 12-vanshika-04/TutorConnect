@@ -11,7 +11,7 @@ export default function ProtectedRoute({ children, allowedRoles }) {
 
   if (!user) return <Navigate to="/login" replace state={{ from: location }} />;
 
-  // ✅ If route requires specific roles (like admin)
+
   if (allowedRoles && !allowedRoles.includes(role)) {
     return <Navigate to="/" replace />;
   }

@@ -14,7 +14,7 @@ export default function Navbar() {
     setCurrentRole(role);
   }, [role]);
 
-  /* ------------------ Role Change ------------------ */
+
   const handleRoleChange = async (newRole) => {
     setCurrentRole(newRole);
     if (!user) return;
@@ -22,7 +22,6 @@ export default function Navbar() {
     try {
       await dispatch(updateRole({ userId: user.$id, role: newRole })).unwrap();
 
-      // ✅ Navigate based on role
       if (newRole === "student") navigate("/student-dashboard");
       else if (newRole === "tutor") navigate("/tutor-dashboard");
       else if (newRole === "admin") navigate("/admin-verify");
@@ -32,7 +31,6 @@ export default function Navbar() {
   };
 
 
-  /* ------------------ Logout ------------------ */
   const handleLogout = async () => {
     await dispatch(logout());
     navigate("/");
@@ -68,7 +66,7 @@ export default function Navbar() {
         )}
       </div>
 
-      {/* Right side */}
+   
       <div className="flex items-center space-x-5">
         <Link to="/" className="hover:text-purple-600 font-medium">
           Home
@@ -77,7 +75,7 @@ export default function Navbar() {
           About
         </Link>
 
-        {/* Role Dropdown */}
+
         {user && (
           <select
             value={currentRole}
@@ -90,7 +88,7 @@ export default function Navbar() {
           </select>
         )}
 
-        {/* ✅ Dashboard Links (Admin sees all) */}
+    
         {user && (
           <>
             {(currentRole === "student" || currentRole === "admin") && (

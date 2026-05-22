@@ -6,7 +6,6 @@ import { Query } from "appwrite";
 const DB = import.meta.env.VITE_APPWRITE_DATABASE_ID;
 const USERS_COLLECTION = import.meta.env.VITE_APPWRITE_USERS_TABLE_ID;
 
-/* ------------------ SIGNUP ------------------ */
 export const signupUser = createAsyncThunk(
   "auth/signupUser",
   async ({ name, email, password }, { rejectWithValue }) => {
@@ -14,7 +13,7 @@ export const signupUser = createAsyncThunk(
       const user = await account.create(ID.unique(), email, password, name);
       await account.createEmailPasswordSession(email, password);
 
-      // Add to users collection
+ 
       await databases.createDocument(DB, USERS_COLLECTION, ID.unique(), {
         userId: user.$id,
         name,
@@ -29,7 +28,7 @@ export const signupUser = createAsyncThunk(
   }
 );
 
-/* ------------------ LOGIN ------------------ */
+
 export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async ({ email, password }, { rejectWithValue }) => {
@@ -53,7 +52,7 @@ export const loginUser = createAsyncThunk(
   }
 );
 
-/* ------------------ GOOGLE LOGIN / SESSION ------------------ */
+
 export const checkGoogleUser = createAsyncThunk(
   "auth/checkGoogleUser",
   async (_, { rejectWithValue }) => {
@@ -99,7 +98,7 @@ export const checkGoogleUser = createAsyncThunk(
   }
 );
 
-/* ------------------ UPDATE ROLE ------------------ */
+
 export const updateRole = createAsyncThunk(
   "auth/updateRole",
   async ({ userId, role }, { rejectWithValue }) => {
@@ -117,7 +116,7 @@ export const updateRole = createAsyncThunk(
   }
 );
 
-/* ------------------ LOGOUT ------------------ */
+
 export const logout = createAsyncThunk("auth/logout", async (_, { rejectWithValue }) => {
   try {
     await account.deleteSession("current");
@@ -126,7 +125,7 @@ export const logout = createAsyncThunk("auth/logout", async (_, { rejectWithValu
   }
 });
 
-/* ------------------ SLICE ------------------ */
+
 const authSlice = createSlice({
   name: "auth",
   initialState: {

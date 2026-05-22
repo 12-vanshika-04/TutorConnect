@@ -16,7 +16,6 @@ export default function BookingPage() {
   const { register, handleSubmit, reset } = useForm();
   const navigate = useNavigate();
 
-  /* ✅ Fetch tutor details */
   useEffect(() => {
     (async () => {
       try {
@@ -28,14 +27,12 @@ export default function BookingPage() {
     })();
   }, [tutorId]);
 
-  /* ✅ Booking submit logic */
   const onSubmit = async (data) => {
     try {
       setIsSubmitting(true);
       const student = await account.get();
       if (!tutor) throw new Error("Tutor details missing!");
 
-      // ✅ New logic: no date/time yet — tutor will choose later
       const payload = {
         tutorId: tutor.user_id,
         tutor_name: tutor.name,

@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { fetchTutors } from "../features/tutors/tutorSlice";
 import TutorCard from "../components/TutorCard";
-import { account } from "../utils/appwrite"; // ✅ Added for login check
+import { account } from "../utils/appwrite"; // 
 
 export default function FindTutors() {
   const dispatch = useDispatch();
@@ -26,13 +26,11 @@ export default function FindTutors() {
   });
 
   const [myLocation, setMyLocation] = useState(null);
-  const [user, setUser] = useState(null); // ✅ Added state to detect logged-in user
+  const [user, setUser] = useState(null); // 
 
   useEffect(() => {
-    // ✅ Fetch tutors for everyone (guest + logged-in)
     dispatch(fetchTutors({ verified: true }));
 
-    // ✅ Check if user is logged in
     account
       .get()
       .then((res) => setUser(res))
@@ -67,7 +65,6 @@ export default function FindTutors() {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
-  // ✅ Keep your full filtering logic unchanged
   const filtered = tutors.filter((t) => {
     if (!t.verified) return false;
 
@@ -208,7 +205,7 @@ export default function FindTutors() {
             <TutorCard
               key={t.$id}
               tutor={t}
-              isGuest={!user} // ✅ Pass guest info to TutorCard
+              isGuest={!user} // 
             />
           ))}
         </div>

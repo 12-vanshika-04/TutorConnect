@@ -69,7 +69,7 @@ const bookingSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      /* ---------- CREATE BOOKING ---------- */
+  
       .addCase(createBooking.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(createBooking.fulfilled, (state, action) => {
         state.loading = false;
@@ -80,7 +80,6 @@ const bookingSlice = createSlice({
         state.error = action.payload;
       })
 
-      /* ---------- FETCH BOOKINGS ---------- */
       .addCase(fetchBookingsByUser.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(fetchBookingsByUser.fulfilled, (state, action) => {
         state.loading = false;
@@ -91,7 +90,6 @@ const bookingSlice = createSlice({
         state.error = action.payload;
       })
 
-      /* ---------- UPDATE BOOKING STATUS ---------- */
       .addCase(updateBookingStatus.pending, (state) => { state.loading = true; state.error = null; })
       .addCase(updateBookingStatus.fulfilled, (state, action) => {
         state.loading = false;

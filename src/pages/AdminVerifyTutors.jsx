@@ -10,7 +10,7 @@ export default function AdminVerifyTutors() {
   const dbId = import.meta.env.VITE_APPWRITE_DATABASE_ID;
   const tutorsColId = import.meta.env.VITE_APPWRITE_TUTORS_TABLE_ID;
 
-  // ✅ Admin emails from .env
+ 
   const adminEmails = import.meta.env.VITE_ADMIN_EMAILS.split(",").map((e) => e.trim());
 
   // 🔹 Verify admin and load pending tutors
@@ -33,7 +33,6 @@ export default function AdminVerifyTutors() {
     init();
   }, []);
 
-  // 🔹 Fetch tutors whose verified = false
   const fetchPendingTutors = async () => {
     try {
       const res = await databases.listDocuments(dbId, tutorsColId, [
@@ -59,7 +58,6 @@ export default function AdminVerifyTutors() {
     }
   };
 
-  // 🔹 Reject tutor (delete document)
   const handleReject = async (tutorId) => {
     try {
       await databases.deleteDocument(dbId, tutorsColId, tutorId);

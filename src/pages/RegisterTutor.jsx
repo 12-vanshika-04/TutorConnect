@@ -19,7 +19,6 @@ function RegisterTutor() {
   const onSubmit = async (data) => {
     setIsSubmitting(true);
     try {
-      // ✅ Upload files
       const identityUpload = await storage.createFile(
         import.meta.env.VITE_APPWRITE_BUCKET_ID,
         ID.unique(),
@@ -32,7 +31,7 @@ function RegisterTutor() {
         data.qualificationProof[0]
       );
 
-      // ✅ Create Tutor Document
+      
       await databases.createDocument(
         import.meta.env.VITE_APPWRITE_DATABASE_ID,
         import.meta.env.VITE_APPWRITE_TUTORS_TABLE_ID,
@@ -52,8 +51,8 @@ function RegisterTutor() {
           qualification: data.qualification || "",
           identityProof: identityUpload.$id,
           qualificationProof: qualificationUpload.$id,
-          verified: false, // ✅ must be boolean
-          user_id: user.$id, // ✅ link with Appwrite user
+          verified: false, 
+          user_id: user.$id, 
         }
       );
 
@@ -137,7 +136,6 @@ function RegisterTutor() {
           <input {...register("standard")} placeholder="Standard (e.g., 6–8)" className="input" required />
           <input {...register("qualification")} placeholder="Qualification" className="input" required />
 
-          {/* ✅ Prevent negative values */}
           <input
             {...register("fees", {
               required: "Fees are required",
@@ -157,7 +155,6 @@ function RegisterTutor() {
 
         <textarea {...register("bio")} placeholder="Short bio" className="input mt-3" rows={3} />
 
-        {/* ✅ Identity Proof Upload */}
         <label className="block mt-4 font-medium text-gray-700">
           Upload Identity Proof (Aadhar/Passport)
         </label>
@@ -171,7 +168,6 @@ function RegisterTutor() {
         />
         {renderPreview(previewIdentity, identityFileName)}
 
-        {/* ✅ Qualification Proof Upload */}
         <label className="block mt-4 font-medium text-gray-700">
           Upload Qualification Document (Marksheets/Degrees)
         </label>

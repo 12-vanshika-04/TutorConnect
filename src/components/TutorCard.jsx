@@ -2,7 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle } from "lucide-react";
 
-export default function TutorCard({ tutor, isGuest = false }) { // ✅ added isGuest prop (default false)
+export default function TutorCard({ tutor, isGuest = false }) {
   const {
     $id,
     name = "Unnamed Tutor",
@@ -20,7 +20,7 @@ export default function TutorCard({ tutor, isGuest = false }) { // ✅ added isG
     longitude,
   } = tutor || {};
 
-  // ✅ Format standard
+
   const displayStandard =
     typeof standard === "string"
       ? standard.replace(/class\\s*/i, "Class ")
@@ -28,18 +28,16 @@ export default function TutorCard({ tutor, isGuest = false }) { // ✅ added isG
       ? `Class ${standard}`
       : "N/A";
 
-  // ✅ Format gender
   const displayGender = gender
     ? gender.charAt(0).toUpperCase() + gender.slice(1).toLowerCase()
     : null;
 
-  // ✅ Format experience
+ 
   const displayExperience =
     experience !== undefined && experience !== null
       ? `${experience} experience`
       : null;
 
-  // ✅ Open Google Maps
   const openRoute = () => {
     if (latitude && longitude) {
       window.open(
